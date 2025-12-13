@@ -1,39 +1,17 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-const products = [
-  {
-    id: 1,
-    name: "Elegant Gold Necklace",
-    price: "₹25,999",
-    image:
-      "https://images.unsplash.com/photo-1600180758895-7c4df553c9b0?q=80&w=800",
-  },
-  {
-    id: 2,
-    name: "Diamond Ring",
-    price: "₹39,499",
-    image:
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=800",
-  },
-  {
-    id: 3,
-    name: "Ruby Earrings",
-    price: "₹12,999",
-    image:
-      "https://images.unsplash.com/photo-1588449960891-40e4b62c3bb0?q=80&w=800",
-  },
-  {
-    id: 4,
-    name: "Luxury Bracelet",
-    price: "₹19,999",
-    image:
-      "https://images.unsplash.com/photo-1584367369853-8af94f1e87c2?q=80&w=800",
-  },
-];
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProducts } from "../Slices/productSlice";
 
 const ProductPage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { products, loading, error } = useSelector((state) => state.product);
+
+  useEffect(() => {
+    // Fetch products when component mounts
+    dispatch(fetchProducts());
+  }, [dispatch]);
 
   const openDetails = (id) => {
     navigate(`/product/${id}`);
@@ -45,34 +23,54 @@ const ProductPage = () => {
         Our Jewellery Collection
       </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-        {products.map((item) => (
-          <div
-            key={item.id}
-            className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer hover:scale-[1.03] transition"
-            onClick={() => openDetails(item.id)}
-          >
-            <img
-              src={item.image}
-              alt={item.name}
-              className="h-52 w-full object-cover"
-            />
+      {loading && (
+        <div className="flex justify-center items-center h-64">
+          <p className="text-[#8a4d55] text-lg">Loading products...</p>
+        </div>
+      )}
 
-            <div className="p-4">
-              <h2 className="text-lg font-semibold text-[#8a4d55]">
-                {item.name}
-              </h2>
-              <p className="text-[#8a4d55]/80 mt-1">{item.price}</p>
+      {error && (
+        <div className="bg-red-100 text-red-700 px-4 py-3 rounded-lg mb-6">
+          Error loading products: {error}
+        </div>
+      )}
 
-              <button
-                className="mt-3 w-full py-2 bg-[#eac1bb]/70 text-[#8a4d55] rounded-full shadow hover:bg-[#eac1bb] transition"
-              >
-                View Details
-              </button>
+      {products && products.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+          {products.map((item) => (
+            <div
+              key={item._id}
+              className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer hover:scale-[1.03] transition"
+              onClick={() => openDetails(item._id)}
+            >
+              <img
+                src={item.image}
+                alt={item.name}
+                className="h-52 w-full object-cover"
+              />
+
+              <div className="p-4">
+                <h2 className="text-lg font-semibold text-[#8a4d55]">
+                  {item.name}
+                </h2>
+                <p className="text-[#8a4d55]/80 mt-1">₹{item.price}</p>
+
+                <button
+                  className="mt-3 w-full py-2 bg-[#eac1bb]/70 text-[#8a4d55] rounded-full shadow hover:bg-[#eac1bb] transition"
+                >
+                  View Details
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        !loading && (
+          <p className="text-center text-[#8a4d55]/70 text-lg">
+            No products available.
+          </p>
+        )
+      )}
     </div>
   );
 };

@@ -1,6 +1,11 @@
 import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { requestOTP, verifyOTP } from "../Slices/userSlice";
 
 const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
+  const dispatch = useDispatch();
+  const { status, error: reduxError } = useSelector((state) => state.user);
+
   const [step, setStep] = useState(1);
   const [isdCode, setIsdCode] = useState("+91");
   const [phone, setPhone] = useState("");
@@ -12,13 +17,23 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
   /* ----------------------------------
       STEP 1 → SEND OTP
   -----------------------------------*/
-  const handleSendOtp = () => {
+  const handleSendOtp = async () => {
     if (phone.length !== 10) {
       setError("Phone number must be exactly 10 digits.");
       return;
     }
     setError("");
-    setStep(2);
+
+    // Dispatch Redux thunk to request OTP
+    const result = await dispatch(
+      requestOTP({ isdCode, phoneNumber: phone })
+    );
+
+    if (result.payload) {
+      setStep(2);
+    } else {
+      setError(reduxError || "Failed to send OTP");
+    }
   };
 
   /* ----------------------------------
@@ -36,7 +51,7 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
     }
   };
 
-  const handleVerifyOtp = () => {
+  const handleVerifyOtp = async () => {
     if (otp.join("").length !== 6) {
       setError("Please enter the complete 6-digit OTP.");
       return;
@@ -44,9 +59,27 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
 
     setError("");
 
-    // ⬇️ CLOSE OTP MODAL + OPEN USER FORM MODAL
-    onClose();
-    onOtpVerified(`${isdCode}${phone}`);
+    // Dispatch Redux thunk to verify OTP
+    const result = await dispatch(
+      verifyOTP({ isdCode, phoneNumber: phone, otp: otp.join("") })
+    );
+
+    if (result.payload) {
+      // ⬇️ CLOSE OTP MODAL + OPEN USER FORM MODAL
+      onClose();
+      
+      // Save accessToken to localStorage for persistent login
+      localStorage.setItem("accessToken", result.payload.accessToken);
+      
+      onOtpVerified({
+        isdCode,
+        phone,
+        accessToken: result.payload.accessToken,
+        userStatus: result.payload.status,
+      });
+    } else {
+      setError(reduxError || "Failed to verify OTP");
+    }
   };
 
   return (
@@ -99,9 +132,10 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
 
             <button
               onClick={handleSendOtp}
-              className="w-full mt-6 py-3 bg-[#eac1bb] text-[#8a4d55] rounded-full text-lg shadow-md hover:bg-[#d9a9a0]"
+              disabled={status === "loading"}
+              className="w-full mt-6 py-3 bg-[#eac1bb] text-[#8a4d55] rounded-full text-lg shadow-md hover:bg-[#d9a9a0] disabled:opacity-50"
             >
-              Send OTP
+              {status === "loading" ? "Sending..." : "Send OTP"}
             </button>
           </>
         )}
@@ -137,9 +171,10 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
 
             <button
               onClick={handleVerifyOtp}
-              className="w-full py-3 bg-[#eac1bb] text-[#8a4d55] rounded-full text-lg shadow-md hover:bg-[#d9a9a0]"
+              disabled={status === "loading"}
+              className="w-full py-3 bg-[#eac1bb] text-[#8a4d55] rounded-full text-lg shadow-md hover:bg-[#d9a9a0] disabled:opacity-50"
             >
-              Verify OTP
+              {status === "loading" ? "Verifying..." : "Verify OTP"}
             </button>
           </>
         )}

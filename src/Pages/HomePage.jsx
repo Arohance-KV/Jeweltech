@@ -1,14 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import OTPModal from "../Components/OTPModal.jsx";
 import UserFormModal from "../Components/UserFormModal.jsx";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProfile } from "../Slices/userSlice";
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { userStatus } = useSelector((state) => state.user);
+  const accessToken = localStorage.getItem("accessToken");
 
   const [openOTP, setOpenOTP] = useState(false);
   const [openUserForm, setOpenUserForm] = useState(false);
-  const [verifiedPhone, setVerifiedPhone] = useState("");
+  const [verifiedData, setVerifiedData] = useState({
+    isdCode: "",
+    phone: "",
+    accessToken: null,
+    userStatus: null,
+  });
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+
+  // Fetch user profile on mount to check approval status
+  useEffect(() => {
+    if (accessToken) {
+      dispatch(fetchProfile());
+    }
+  }, [dispatch, accessToken]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
@@ -39,7 +57,25 @@ const HomePage = () => {
 
         {/* See Products Button */}
         <button
-          onClick={() => setOpenOTP(true)}
+          onClick={() => {
+            if (userStatus === "active") {
+              // User already approved - go directly to products
+              navigate("/product");
+            } else if (accessToken && userStatus) {
+              // User has token and profile fetch completed - check status
+              if (userStatus === "pending" || userStatus === "pending_details") {
+                navigate("/profile");
+              } else {
+                navigate("/product");
+              }
+            } else if (accessToken) {
+              // Token exists but profile still loading - fetch it
+              dispatch(fetchProfile());
+            } else {
+              // New user - show OTP modal
+              setOpenOTP(true);
+            }
+          }}
           className="mt-8 px-8 py-3 bg-[#eac1bb]/80 text-[#8a4d55] 
           rounded-full text-lg font-medium backdrop-blur-lg hover:bg-[#eac1bb] 
           transition-all duration-300 shadow-lg animate-fadeIn animation-delay-500"
@@ -52,10 +88,21 @@ const HomePage = () => {
       <OTPModal
         isOpen={openOTP}
         onClose={() => setOpenOTP(false)}
-        onOtpVerified={(phone) => {
-          setVerifiedPhone(phone);   // store the verified number
-          setOpenOTP(false);         // close OTP modal
-          setOpenUserForm(true);     // open profile modal
+        onOtpVerified={(data) => {
+          setVerifiedData(data);
+          setOpenOTP(false);
+          
+          // Check user status after OTP verification
+          if (data.userStatus === "active") {
+            // User already approved - go directly to products
+            navigate("/product");
+          } else if (data.userStatus === "pending_details") {
+            // User needs to complete profile details
+            setOpenUserForm(true);
+          } else if (data.userStatus === "pending") {
+            // User profile submitted, awaiting admin approval
+            setShowApprovalModal(true);
+          }
         }}
       />
 
@@ -63,12 +110,40 @@ const HomePage = () => {
       <UserFormModal
         isOpen={openUserForm}
         onClose={() => setOpenUserForm(false)}
-        phone={verifiedPhone}       // pass verified phone
+        phone={verifiedData.phone}
+        isdCode={verifiedData.isdCode}
+        accessToken={verifiedData.accessToken}
+        userStatus={verifiedData.userStatus}
         onSuccess={() => {
           setOpenUserForm(false);
-          navigate("/product");     // redirect after profile form submit
+          setShowApprovalModal(true); // Show approval message
         }}
       />
+
+      {/* Approval Pending Modal */}
+      {showApprovalModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+          <div className="bg-white/95 w-full max-w-md rounded-3xl shadow-2xl p-8 text-center border border-[#f3d4cd]">
+            <h2 className="text-3xl font-semibold text-[#8a4d55] mb-4">
+              ⏳ Pending Approval
+            </h2>
+            <p className="text-[#8a4d55]/80 mb-6">
+              {verifiedData.userStatus === "pending"
+                ? "Your profile is awaiting admin approval. You'll be able to access products once approved."
+                : "Your profile has been submitted for admin approval. You'll be able to access products once approved."}
+            </p>
+            <button
+              onClick={() => {
+                setShowApprovalModal(false);
+                navigate("/profile");
+              }}
+              className="w-full mt-4 py-3 bg-[#eac1bb] text-[#8a4d55] rounded-full text-lg shadow-md hover:bg-[#d9a9a0]"
+            >
+              Go to Profile
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Animations */}
       <style>{`

@@ -7,10 +7,12 @@ export const fetchProducts = createAsyncThunk(
   'product/fetchProducts',
   async (_, { rejectWithValue }) => {
     try {
+      const accessToken = localStorage.getItem('accessToken');
       const response = await fetch(`${API_BASE_URL}/product`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
       });
       const result = await response.json();
@@ -28,10 +30,12 @@ export const fetchProductById = createAsyncThunk(
   'product/fetchProductById',
   async (productId, { rejectWithValue }) => {
     try {
+      const accessToken = localStorage.getItem('accessToken');
       const response = await fetch(`${API_BASE_URL}/product/${productId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
       });
       const result = await response.json();

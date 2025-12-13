@@ -1,27 +1,47 @@
 import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { updateProfile } from "../Slices/userSlice";
 
-const UserFormModal = ({ isOpen, onClose, phone, onSuccess }) => {
+const UserFormModal = ({ isOpen, onClose, phone, isdCode, accessToken, userStatus, onSuccess }) => {
+  const dispatch = useDispatch();
+  const { status, error: reduxError, userStatus: updatedStatus } = useSelector((state) => state.user);
   if (!isOpen) return null;
 
-  const handleUserSubmit = (e) => {
+  const handleUserSubmit = async (e) => {
     e.preventDefault();
 
     const formData = new FormData(e.target);
 
-    const user = {
+    const profileData = {
       firstName: formData.get("firstName"),
       lastName: formData.get("lastName"),
-      businessName: formData.get("businessName"),
-      phone: phone, // ⬅️ Verified number from OTPModal
+      buisnessName: formData.get("buisnessName"),
       email: formData.get("email"),
       city: formData.get("city"),
       state: formData.get("state"),
+      phoneNumber: phone,
+      isdCode: isdCode,
     };
 
-    localStorage.setItem("user", JSON.stringify(user));
+    // Dispatch Redux thunk to update profile
+    const result = await dispatch(updateProfile(profileData));
 
-    if (onSuccess) onSuccess(user);
-    onClose();
+    if (result.payload) {
+      // Save user data and access token to localStorage
+      localStorage.setItem("user", JSON.stringify({
+        ...profileData,
+        phone: phone,
+      }));
+      if (accessToken) {
+        localStorage.setItem("accessToken", accessToken);
+      }
+
+      if (onSuccess) onSuccess({
+        ...profileData,
+        phone: phone,
+      });
+      onClose();
+    }
   };
 
   return (
@@ -39,6 +59,19 @@ const UserFormModal = ({ isOpen, onClose, phone, onSuccess }) => {
         <h2 className="text-3xl font-semibold text-[#8a4d55] mb-6 text-center">
           Complete Your Profile
         </h2>
+
+        {reduxError && (
+          <div className="bg-red-100 text-red-700 px-4 py-2 rounded-lg mb-4">
+            {reduxError}
+          </div>
+        )}
+
+        {/* Show approval status if user just completed registration */}
+        {updatedStatus === "pending_details" && (
+          <div className="bg-yellow-100 text-yellow-800 px-4 py-3 rounded-lg mb-6 border border-yellow-300">
+            ⏳ Your profile is pending admin approval. We'll notify you once approved!
+          </div>
+        )}
 
         <form onSubmit={handleUserSubmit} className="space-y-4">
 
@@ -60,7 +93,7 @@ const UserFormModal = ({ isOpen, onClose, phone, onSuccess }) => {
 
           {/* Business */}
           <input
-            name="businessName"
+            name="buisnessName"
             placeholder="Business Name"
             className="w-full border border-[#eac1bb] rounded-xl px-4 py-3"
             required
@@ -98,10 +131,11 @@ const UserFormModal = ({ isOpen, onClose, phone, onSuccess }) => {
 
           <button
             type="submit"
+            disabled={status === "loading"}
             className="w-full mt-4 py-3 bg-[#eac1bb] text-[#8a4d55] 
-            rounded-full text-lg font-semibold shadow-md hover:bg-[#d9a9a0] transition"
+            rounded-full text-lg font-semibold shadow-md hover:bg-[#d9a9a0] transition disabled:opacity-50"
           >
-            Save & Continue
+            {status === "loading" ? "Saving..." : "Save & Continue"}
           </button>
         </form>
       </div>

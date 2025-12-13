@@ -7,12 +7,13 @@ export const fetchCart = createAsyncThunk(
   'cart/fetchCart',
   async (_, { rejectWithValue }) => {
     try {
+      const accessToken = localStorage.getItem('accessToken');
       const response = await fetch(`${API_BASE_URL}/cart`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
-        credentials: 'include',
       });
       const result = await response.json();
       if (!response.ok) {
@@ -29,12 +30,13 @@ export const addToCart = createAsyncThunk(
   'cart/addToCart',
   async (payload, { rejectWithValue }) => {
     try {
+      const accessToken = localStorage.getItem('accessToken');
       const response = await fetch(`${API_BASE_URL}/cart/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
-        credentials: 'include',
         body: JSON.stringify(payload),
       });
       const result = await response.json();
@@ -52,12 +54,13 @@ export const removeFromCart = createAsyncThunk(
   'cart/removeFromCart',
   async (payload, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/remove`, {
+      const accessToken = localStorage.getItem('accessToken');
+      const response = await fetch(`${API_BASE_URL}/cart/remove`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
-        credentials: 'include',
         body: JSON.stringify(payload),
       });
       const result = await response.json();
@@ -75,12 +78,13 @@ export const clearCart = createAsyncThunk(
   'cart/clearCart',
   async (_, { rejectWithValue }) => {
     try {
+      const accessToken = localStorage.getItem('accessToken');
       const response = await fetch(`${API_BASE_URL}/cart/clear`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
-        credentials: 'include',
       });
       const result = await response.json();
       if (!response.ok) {
@@ -97,12 +101,13 @@ export const generateEnquiry = createAsyncThunk(
   'cart/generateEnquiry',
   async (_, { rejectWithValue }) => {
     try {
+      const accessToken = localStorage.getItem('accessToken');
       const response = await fetch(`${API_BASE_URL}/cart/generate-enquiry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
-        credentials: 'include',
       });
       const result = await response.json();
       if (!response.ok) {
