@@ -1,27 +1,65 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProducts } from "../Slices/productSlice";
+import { fetchCategories } from "../Slices/categorySlice";
 
 const ProductPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { products, loading, error } = useSelector((state) => state.product);
+  const { categories } = useSelector((state) => state.category);
+  
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
   useEffect(() => {
-    // Fetch products when component mounts
+    // Fetch products and categories when component mounts
     dispatch(fetchProducts());
+    dispatch(fetchCategories());
   }, [dispatch]);
+
+  // Filter products based on selected category
+  useEffect(() => {
+    if (selectedCategory === "all") {
+      setFilteredProducts(products);
+    } else {
+      const filtered = products.filter(
+        (product) => product.categoryId === selectedCategory
+      );
+      setFilteredProducts(filtered);
+    }
+  }, [selectedCategory, products]);
 
   const openDetails = (id) => {
     navigate(`/product/${id}`);
   };
 
   return (
-    <div className="pt-28 px-6 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-semibold text-[#8a4d55] mb-6">
-        Our Jewellery Collection
-      </h1>
+    <div className="pt-28 px-6 max-w-7xl mx-auto">
+      {/* Header and Filter Section */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-semibold text-[#8a4d55]">
+          Our Jewellery Collection
+        </h1>
+
+        {/* Filter Dropdown */}
+        <div className="flex items-center gap-3">
+          <label className="text-[#8a4d55] font-medium">Filter by Category:</label>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="px-4 py-2 border border-[#8a4d55]/30 rounded-lg bg-white text-[#8a4d55] font-medium focus:outline-none focus:border-[#8a4d55] transition"
+          >
+            <option value="all">All Categories</option>
+            {categories.map((category) => (
+              <option key={category._id} value={category._id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {loading && (
         <div className="flex justify-center items-center h-64">
@@ -35,9 +73,9 @@ const ProductPage = () => {
         </div>
       )}
 
-      {products && products.length > 0 ? (
+      {filteredProducts && filteredProducts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-          {products.map((item) => (
+          {filteredProducts.map((item) => (
             <div
               key={item._id}
               className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer hover:scale-[1.03] transition"

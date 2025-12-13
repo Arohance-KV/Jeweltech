@@ -5,21 +5,75 @@ import Toast from "../Components/Toast.jsx";
 
 const CartPage = () => {
   const dispatch = useDispatch();
-  const { items, loading, error, success, enquiryMessage } = useSelector((state) => state.cart);
-  const { user } = useSelector((state) => state.user);
+  const { items, loading, error } = useSelector((state) => state.cart);
   const [toast, setToast] = useState(null);
+  const [enrichedItems, setEnrichedItems] = useState([]);
+  const [enrichLoading, setEnrichLoading] = useState(false);
+  const [showEnquiryPreview, setShowEnquiryPreview] = useState(false);
+  const [enquiryMessageText, setEnquiryMessageText] = useState("");
 
   useEffect(() => {
-    // Fetch cart when component mounts
     dispatch(fetchCart());
   }, [dispatch]);
+
+  // Fetch product details for cart items
+  useEffect(() => {
+    const enrichItems = async () => {
+      if (!items || items.length === 0) {
+        setEnrichedItems([]);
+        return;
+      }
+
+      setEnrichLoading(true);
+      try {
+        const accessToken = localStorage.getItem('accessToken');
+        const enriched = await Promise.all(
+          items.map(async (cartItem) => {
+            try {
+              const response = await fetch(
+                `https://jewel-tech.onrender.com/product/${cartItem.productId}`,
+                {
+                  method: 'GET',
+                  headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+
+              if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.data) {
+                  return {
+                    _id: cartItem.productId,
+                    quantity: cartItem.quantity,
+                    ...result.data,
+                  };
+                }
+              }
+            } catch (err) {
+              console.error(`Error fetching product ${cartItem.productId}:`, err);
+            }
+            return cartItem;
+          })
+        );
+        setEnrichedItems(enriched);
+      } catch (err) {
+        console.error('Error enriching cart items:', err);
+        setEnrichedItems(items);
+      } finally {
+        setEnrichLoading(false);
+      }
+    };
+
+    enrichItems();
+  }, [items]);
 
   const handleRemoveItem = async (productId) => {
     try {
       const result = await dispatch(removeFromCart({ productId }));
-      if (result.payload) {
-        // Refetch cart to update the UI
-        dispatch(fetchCart());
+
+      if (result.type === removeFromCart.fulfilled.type) {
         setToast({
           message: "✨ Item removed from cart",
           type: "success",
@@ -31,6 +85,7 @@ const CartPage = () => {
         });
       }
     } catch (err) {
+      console.error("Error removing item:", err);
       setToast({
         message: "❌ Error removing item",
         type: "error",
@@ -41,7 +96,7 @@ const CartPage = () => {
   const handleClearCart = async () => {
     try {
       const result = await dispatch(clearCart());
-      if (result.payload) {
+      if (result.type === clearCart.fulfilled.type) {
         setToast({
           message: "✨ Cart cleared successfully",
           type: "success",
@@ -61,7 +116,7 @@ const CartPage = () => {
   };
 
   const handleGenerateEnquiry = async () => {
-    if (items.length === 0) {
+    if (enrichedItems.length === 0) {
       setToast({
         message: "❌ Cart is empty. Add items before sending enquiry",
         type: "error",
@@ -70,34 +125,12 @@ const CartPage = () => {
     }
 
     try {
-      // Dispatch the enquiry action to backend first
       const result = await dispatch(generateEnquiry());
-      
-      if (result.payload && result.payload.message) {
-        // Get the message from backend response
-        let enquiryMessage = result.payload.message;
-        
-        // Get owner's WhatsApp number
-        const ownerWhatsAppNumber = "919876543210"; // Replace with actual owner number
-        
-        // Encode the message properly for WhatsApp
-        const encodedMessage = encodeURIComponent(enquiryMessage);
-        
-        // Create WhatsApp URL
-        const whatsappURL = `https://wa.me/${ownerWhatsAppNumber}?text=${encodedMessage}`;
-        
-        console.log("Opening WhatsApp with URL:", whatsappURL);
-        
-        // Open WhatsApp - works better with encoded message
-        window.open(whatsappURL, "_blank");
-        
-        // Small delay to ensure window opens
-        setTimeout(() => {
-          setToast({
-            message: "✨ WhatsApp opened! Send your enquiry.",
-            type: "success",
-          });
-        }, 500);
+
+      if (result.type === generateEnquiry.fulfilled.type && result.payload?.message) {
+        // Store the message and show preview
+        setEnquiryMessageText(result.payload.message);
+        setShowEnquiryPreview(true);
       } else {
         setToast({
           message: "❌ Failed to generate enquiry",
@@ -113,27 +146,80 @@ const CartPage = () => {
     }
   };
 
-  const total = items.reduce((sum, item) => {
-    let price = 0;
-    if (typeof item.price === "number") {
-      price = item.price;
-    } else if (item.price && typeof item.price === "string") {
-      price = parseInt(item.price.replace(/[₹,]/g, "")) || 0;
-    } else if (item.makingChargesPerGram && item.weight) {
-      price = item.makingChargesPerGram * item.weight;
+  const handleSendToWhatsApp = () => {
+    try {
+      const ownerWhatsAppNumber = "919876543210"; // Replace with actual owner number
+
+      // Properly encode the message for WhatsApp URL
+      const encodedMessage = encodeURIComponent(enquiryMessageText);
+      const whatsappURL = `https://wa.me/${ownerWhatsAppNumber}?text=${encodedMessage}`;
+
+      console.log("Opening WhatsApp with message:", enquiryMessageText);
+
+      window.open(whatsappURL, "_blank");
+
+      setTimeout(() => {
+        setShowEnquiryPreview(false);
+        setToast({
+          message: "✨ WhatsApp opened! Send your enquiry.",
+          type: "success",
+        });
+      }, 500);
+    } catch (err) {
+      console.error("Error sending to WhatsApp:", err);
+      setToast({
+        message: "❌ Error opening WhatsApp",
+        type: "error",
+      });
     }
-    const qty = item.quantity || item.qty || 1;
+  };
+
+  const getPrice = (item) => {
+    if (typeof item.price === "number") {
+      return item.price;
+    } else if (item.price && typeof item.price === "string") {
+      return parseInt(item.price.replace(/[₹,]/g, "")) || 0;
+    }
+
+    if (item.makingChargesPerGram && item.weight) {
+      const chargesPerGram = typeof item.makingChargesPerGram === "string"
+        ? parseInt(item.makingChargesPerGram)
+        : item.makingChargesPerGram;
+      const weight = typeof item.weight === "string"
+        ? parseFloat(item.weight)
+        : item.weight;
+      return chargesPerGram * weight;
+    }
+
+    return 0;
+  };
+
+  const getItemImage = (item) => {
+    if (item.images && item.images.length > 0 && item.images[0]) {
+      return item.images[0];
+    }
+    if (item.image) {
+      return item.image;
+    }
+    return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='112' height='112'%3E%3Crect fill='%23eac1bb' width='112' height='112'/%3E%3Ctext x='50%' y='50%' font-family='Arial' font-size='12' fill='%238a4d55' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
+  };
+
+  const total = enrichedItems.reduce((sum, item) => {
+    const price = getPrice(item);
+    const qty = item.quantity || 1;
     return sum + (price * qty);
   }, 0);
+
+  const isLoading = loading || enrichLoading;
 
   return (
     <div className="pt-28 px-6 max-w-5xl mx-auto pb-10">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-semibold text-[#8a4d55]">Your Cart</h1>
-        {items.length > 0 && (
+        {enrichedItems.length > 0 && (
           <button
             onClick={handleClearCart}
-            disabled={loading}
+            disabled={isLoading}
             className="px-6 py-2 bg-red-500 text-white rounded-full font-semibold hover:bg-red-600 transition disabled:opacity-50"
           >
             Clear All
@@ -141,7 +227,7 @@ const CartPage = () => {
         )}
       </div>
 
-      {loading && (
+      {isLoading && (
         <p className="text-center text-[#8a4d55]/70 text-lg">Loading cart...</p>
       )}
 
@@ -151,44 +237,47 @@ const CartPage = () => {
         </div>
       )}
 
-      {items.length === 0 && !loading && (
+      {enrichedItems.length === 0 && !isLoading && (
         <p className="text-center text-[#8a4d55]/70 text-lg">
           Your cart is empty.
         </p>
       )}
 
-      {items.length > 0 && (
+      {enrichedItems.length > 0 && (
         <div className="space-y-6 mb-8">
-          {items.map((item) => (
+          {enrichedItems.map((item) => (
             <div
               key={item._id}
               className="flex items-start gap-6 bg-white p-6 rounded-xl shadow-md border border-[#eac1bb]/50 hover:shadow-lg transition"
             >
               {/* Product Image */}
               <img
-                src={item.images && item.images[0] ? item.images[0] : item.image}
-                alt={item.name}
-                className="w-28 h-28 object-cover rounded-lg flex-shrink-0"
+                src={getItemImage(item)}
+                alt={item.name || "Product"}
+                className="w-28 h-28 object-cover rounded-lg flex shrink-0"
               />
 
               {/* Product Details */}
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-[#8a4d55] mb-2">
-                  {item.name}
+                  {item.name || "Product Name Not Available"}
                 </h2>
                 <p className="text-sm text-[#8a4d55]/70 mb-3">
                   <span className="font-medium">Product ID:</span> {item._id}
                 </p>
-                <p className="text-sm text-[#8a4d55]/70">
+                <p className="text-sm text-[#8a4d55]/70 mb-2">
                   <span className="font-medium">Quantity:</span> {item.quantity || 1}
+                </p>
+                <p className="text-lg font-semibold text-[#8a4d55]">
+                  ₹{getPrice(item)}
                 </p>
               </div>
 
               {/* Remove Button */}
               <button
                 onClick={() => handleRemoveItem(item._id)}
-                disabled={loading}
-                className="px-6 py-2 bg-red-500 text-white rounded-full font-semibold hover:bg-red-600 transition disabled:opacity-50 flex-shrink-0"
+                disabled={isLoading}
+                className="px-6 py-2 bg-red-500 text-white rounded-full font-semibold hover:bg-red-600 transition disabled:opacity-50 flex shrink-0 h-fit"
               >
                 Remove
               </button>
@@ -198,22 +287,30 @@ const CartPage = () => {
       )}
 
       {/* Total and Send Enquiry Section */}
-      {items.length > 0 && (
+      {enrichedItems.length > 0 && (
         <div className="p-6 bg-white rounded-xl shadow-lg border border-[#eac1bb]/50">
-          <div className="mb-6 flex justify-between items-center">
-            <span className="text-xl font-semibold text-[#8a4d55]">Total Items:</span>
-            <span className="text-2xl font-bold text-[#8a4d55]">
-              {items.length}
-            </span>
+          <div className="mb-4 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-semibold text-[#8a4d55]">Total Items:</span>
+              <span className="text-2xl font-bold text-[#8a4d55]">
+                {enrichedItems.length}
+              </span>
+            </div>
+            <div className="flex justify-between items-center pt-3 border-t border-[#eac1bb]/30">
+              <span className="text-xl font-semibold text-[#8a4d55]">Total Price:</span>
+              <span className="text-2xl font-bold text-[#8a4d55]">
+                ₹{total.toLocaleString()}
+              </span>
+            </div>
           </div>
 
           <button
             onClick={handleGenerateEnquiry}
-            disabled={loading}
+            disabled={isLoading}
             className="w-full py-3 bg-[#eac1bb]/80 text-[#8a4d55] 
             rounded-full text-lg font-semibold shadow-md hover:bg-[#eac1bb] transition disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {loading ? "Generating..." : "💬 Send Enquiry via WhatsApp"}
+            {isLoading ? "Generating..." : "💬 Send Enquiry via WhatsApp"}
           </button>
         </div>
       )}
@@ -225,6 +322,40 @@ const CartPage = () => {
           type={toast.type}
           onClose={() => setToast(null)}
         />
+      )}
+
+      {/* Enquiry Preview Modal */}
+      {showEnquiryPreview && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl p-8 border border-[#eac1bb]/50 max-h-[80vh] overflow-y-auto">
+            <h2 className="text-2xl font-semibold text-[#8a4d55] mb-4">
+              📋 Enquiry Preview
+            </h2>
+
+            <div className="bg-[#f9f5f3] p-6 rounded-xl mb-6 whitespace-pre-wrap text-[#8a4d55] text-sm leading-relaxed border border-[#eac1bb]/30 font-mono">
+              {enquiryMessageText}
+            </div>
+
+            <p className="text-[#8a4d55]/70 text-sm mb-6">
+              This message will be sent to WhatsApp. Please review it before sending.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowEnquiryPreview(false)}
+                className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-300 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendToWhatsApp}
+                className="flex-1 py-3 bg-[#eac1bb] text-[#8a4d55] rounded-full font-semibold hover:bg-[#d9a9a0] transition flex items-center justify-center gap-2"
+              >
+                💬 Send to WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

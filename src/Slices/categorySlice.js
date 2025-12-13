@@ -7,10 +7,13 @@ export const fetchCategories = createAsyncThunk(
   'category/fetchCategories',
   async (_, { rejectWithValue }) => {
     try {
+      const token = localStorage.getItem('accessToken');
+      
       const response = await fetch(`${API_BASE_URL}/category`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
       const result = await response.json();
@@ -28,10 +31,13 @@ export const fetchCategoryById = createAsyncThunk(
   'category/fetchCategoryById',
   async (categoryId, { rejectWithValue }) => {
     try {
+      const token = localStorage.getItem('token');
+      
       const response = await fetch(`${API_BASE_URL}/category/${categoryId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
       const result = await response.json();

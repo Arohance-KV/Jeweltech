@@ -172,6 +172,7 @@ const cartSlice = createSlice({
         state.loading = false;
         state.items = action.payload.items || [];
         state.cartId = action.payload._id;
+        state.userId = action.payload.userId;
         state.success = true;
       })
       .addCase(addToCart.rejected, (state, action) => {
@@ -187,7 +188,14 @@ const cartSlice = createSlice({
       })
       .addCase(removeFromCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.items || [];
+        // Handle both response formats: { items: [...] } or direct items array
+        if (action.payload && action.payload.items) {
+          state.items = action.payload.items;
+        } else if (Array.isArray(action.payload)) {
+          state.items = action.payload;
+        } else {
+          state.items = [];
+        }
         state.success = true;
       })
       .addCase(removeFromCart.rejected, (state, action) => {

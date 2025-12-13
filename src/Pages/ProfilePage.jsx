@@ -66,8 +66,69 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="pt-28 text-center text-[#8a4d55] text-xl">
-        Loading profile...
+      <div className="pt-28 px-6 max-w-3xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-semibold text-[#8a4d55]">
+            Profile Information
+          </h1>
+        </div>
+
+        {/* Loading Skeleton */}
+        <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200 mb-6 animate-pulse">
+          
+          {/* Row 1 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+            <div>
+              <p className="text-[#8a4d55]/70 text-sm mb-2">First Name</p>
+              <div className="h-6 bg-gray-200 rounded w-24"></div>
+            </div>
+
+            <div>
+              <p className="text-[#8a4d55]/70 text-sm mb-2">Last Name</p>
+              <div className="h-6 bg-gray-200 rounded w-24"></div>
+            </div>
+          </div>
+
+          {/* Row 2 */}
+          <div className="mb-4">
+            <p className="text-[#8a4d55]/70 text-sm mb-2">Business Name</p>
+            <div className="h-6 bg-gray-200 rounded w-40"></div>
+          </div>
+
+          {/* Row 3 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+            <div>
+              <p className="text-[#8a4d55]/70 text-sm mb-2">Phone Number</p>
+              <div className="h-6 bg-gray-200 rounded w-32"></div>
+            </div>
+
+            <div>
+              <p className="text-[#8a4d55]/70 text-sm mb-2">Email</p>
+              <div className="h-6 bg-gray-200 rounded w-40"></div>
+            </div>
+          </div>
+
+          {/* Row 4 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-[#8a4d55]/70 text-sm mb-2">City</p>
+              <div className="h-6 bg-gray-200 rounded w-28"></div>
+            </div>
+
+            <div>
+              <p className="text-[#8a4d55]/70 text-sm mb-2">State</p>
+              <div className="h-6 bg-gray-200 rounded w-28"></div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Loading Buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 animate-pulse">
+          <div className="h-12 bg-gray-200 rounded-full"></div>
+          <div className="h-12 bg-gray-200 rounded-full"></div>
+          <div className="h-12 bg-gray-200 rounded-full"></div>
+        </div>
       </div>
     );
   }
@@ -75,7 +136,7 @@ const ProfilePage = () => {
   if (!user) {
     return (
       <div className="pt-28 text-center text-[#8a4d55] text-xl">
-        No user logged in.
+        Loading profile...
       </div>
     );
   }
