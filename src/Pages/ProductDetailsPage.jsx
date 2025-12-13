@@ -9,7 +9,7 @@ const ProductDetailsPage = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const { selectedProduct, loading, error } = useSelector((state) => state.product);
-  const { status: cartStatus, error: cartError } = useSelector((state) => state.cart);
+  const { status: cartStatus } = useSelector((state) => state.cart);
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
@@ -19,19 +19,26 @@ const ProductDetailsPage = () => {
 
   const handleAddToCart = async () => {
     if (selectedProduct) {
-      const result = await dispatch(addToCart({
-        productId: selectedProduct._id,
-        quantity: 1,
-      }));
-      
-      if (result.payload) {
+      try {
+        const result = await dispatch(addToCart({
+          productId: selectedProduct._id,
+          quantity: 1,
+        }));
+        
+        if (result.payload) {
+          setToast({
+            message: "✨ Added to cart successfully!",
+            type: "success",
+          });
+        } else {
+          setToast({
+            message: "❌ Failed to add to cart",
+            type: "error",
+          });
+        }
+      } catch (err) {
         setToast({
-          message: "✨ Added to cart successfully!",
-          type: "success",
-        });
-      } else if (result.payload === undefined) {
-        setToast({
-          message: "❌ Failed to add to cart",
+          message: "❌ Error adding to cart",
           type: "error",
         });
       }

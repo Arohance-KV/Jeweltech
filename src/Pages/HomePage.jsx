@@ -51,14 +51,14 @@ const HomePage = () => {
         </h1>
 
         <p className="text-white/90 max-w-2xl mt-4 md:text-lg text-sm animate-fadeIn animation-delay-300">
-          Explore our premium handcrafted jewellery collection—where luxury meets timeless
+          Explore our premium handcrafted jewellery collectionâ€"where luxury meets timeless
           craftsmanship. Shine with elegance every day.
         </p>
 
         {/* See Products Button */}
         <button
           onClick={() => {
-            if (userStatus === "active") {
+            if (userStatus === "active" || userStatus === "approved") {
               // User already approved - go directly to products
               navigate("/product");
             } else if (accessToken && userStatus) {
@@ -93,8 +93,8 @@ const HomePage = () => {
           setOpenOTP(false);
           
           // Check user status after OTP verification
-          if (data.userStatus === "active") {
-            // User already approved - go directly to products
+          if (data.userStatus === "active" || data.userStatus === "approved") {
+            // User already approved - go directly to products immediately
             navigate("/product");
           } else if (data.userStatus === "pending_details") {
             // User needs to complete profile details
@@ -125,7 +125,7 @@ const HomePage = () => {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
           <div className="bg-white/95 w-full max-w-md rounded-3xl shadow-2xl p-8 text-center border border-[#f3d4cd]">
             <h2 className="text-3xl font-semibold text-[#8a4d55] mb-4">
-              ⏳ Pending Approval
+              â³ Pending Approval
             </h2>
             <p className="text-[#8a4d55]/80 mb-6">
               {verifiedData.userStatus === "pending"

@@ -18,6 +18,52 @@ const ProfilePage = () => {
     navigate("/");
   };
 
+  const handleRefresh = () => {
+    dispatch(fetchProfile());
+  };
+
+  const handleViewProducts = () => {
+    navigate("/product");
+  };
+
+  const isApproved = userStatus === "active" || userStatus === "approved";
+
+  const getStatusConfig = () => {
+    if (userStatus === "pending_details" || userStatus === "pending") {
+      return {
+        label: "Pending Approval",
+        bgColor: "bg-yellow-50",
+        borderColor: "border-yellow-300",
+        badgeBg: "bg-yellow-100",
+        badgeText: "text-yellow-800",
+        icon: "⏳",
+        bannerBg: "bg-yellow-100",
+        bannerText: "text-yellow-800",
+      };
+    } else if (userStatus === "active" || userStatus === "approved") {
+      return {
+        label: "Approved",
+        bgColor: "bg-green-50",
+        borderColor: "border-green-300",
+        badgeBg: "bg-green-100",
+        badgeText: "text-green-800",
+        icon: "✓",
+        bannerBg: "bg-green-100",
+        bannerText: "text-green-800",
+      };
+    }
+    return {
+      label: "Unknown",
+      bgColor: "bg-gray-50",
+      borderColor: "border-gray-300",
+      badgeBg: "bg-gray-100",
+      badgeText: "text-gray-800",
+      icon: "?",
+      bannerBg: "bg-gray-100",
+      bannerText: "text-gray-800",
+    };
+  };
+
   if (loading) {
     return (
       <div className="pt-28 text-center text-[#8a4d55] text-xl">
@@ -34,11 +80,21 @@ const ProfilePage = () => {
     );
   }
 
+  const statusConfig = getStatusConfig();
+
   return (
     <div className="pt-28 px-6 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-semibold text-[#8a4d55] mb-6 text-center">
-        Profile Information
-      </h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-semibold text-[#8a4d55]">
+          Profile Information
+        </h1>
+        
+        {/* Status Badge */}
+        <div className={`px-4 py-2 rounded-full ${statusConfig.badgeBg} ${statusConfig.badgeText} font-semibold text-sm flex items-center gap-2`}>
+          <span>{statusConfig.icon}</span>
+          <span>{statusConfig.label}</span>
+        </div>
+      </div>
 
       {error && (
         <div className="bg-red-100 text-red-700 px-4 py-3 rounded-lg mb-6">
@@ -46,20 +102,8 @@ const ProfilePage = () => {
         </div>
       )}
 
-      {/* Approval Status Banner */}
-      {userStatus === "pending_details" && (
-        <div className="bg-yellow-100 text-yellow-800 px-4 py-3 rounded-lg mb-6 border border-yellow-300">
-          ⏳ <strong>Pending Approval:</strong> Your profile is awaiting admin approval. You'll have full access once approved.
-        </div>
-      )}
 
-      {userStatus === "active" && (
-        <div className="bg-green-100 text-green-800 px-4 py-3 rounded-lg mb-6 border border-green-300">
-          ✓ <strong>Approved:</strong> Your profile is approved. You have full access.
-        </div>
-      )}
-
-      <div className="bg-white shadow-lg rounded-xl p-6 border border-[#eac1bb]/50 mb-6">
+      <div className={`bg-white shadow-lg rounded-xl p-6 border ${statusConfig.borderColor} mb-6`}>
         
         {/* Row 1 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
@@ -122,13 +166,37 @@ const ProfilePage = () => {
 
       </div>
 
-      {/* Logout Button */}
-      <button
-        onClick={handleLogout}
-        className="w-full py-3 bg-red-500 text-white rounded-full text-lg font-semibold shadow-md hover:bg-red-600 transition"
-      >
+      {/* Action Buttons */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        {/* Refresh Button */}
+        <button
+          onClick={handleRefresh}
+          className="py-3 bg-blue-500 text-white rounded-full text-lg font-semibold shadow-md hover:bg-blue-600 transition"
+        >
+          🔄 Refresh Status
+        </button>
+
+        {/* View Products Button */}
+        <button
+          onClick={handleViewProducts}
+          disabled={!isApproved}
+          className={`py-3 rounded-full text-lg font-semibold shadow-md transition ${
+            isApproved
+              ? "bg-green-500 text-white hover:bg-green-600 cursor-pointer"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
+        >
+         View Products
+        </button>
+
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="py-3 bg-red-500 text-white rounded-full text-lg font-semibold shadow-md hover:bg-red-600 transition"
+        >
         Logout
-      </button>
+        </button>
+      </div>
     </div>
   );
 };
