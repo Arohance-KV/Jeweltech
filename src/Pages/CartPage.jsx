@@ -2,18 +2,28 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCart, removeFromCart, generateEnquiry, clearCart } from "../Slices/cartSlice";
 import Toast from "../Components/Toast.jsx";
+import { useNavigate } from "react-router-dom";
 
 const CartPage = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { items, loading, error } = useSelector((state) => state.cart);
   const [toast, setToast] = useState(null);
   const [enrichedItems, setEnrichedItems] = useState([]);
   const [enrichLoading, setEnrichLoading] = useState(false);
   const [showEnquiryPreview, setShowEnquiryPreview] = useState(false);
   const [enquiryMessageText, setEnquiryMessageText] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Check if user is logged in
   useEffect(() => {
-    dispatch(fetchCart());
+    const accessToken = localStorage.getItem('accessToken');
+    if (accessToken) {
+      setIsLoggedIn(true);
+      dispatch(fetchCart());
+    } else {
+      setIsLoggedIn(false);
+    }
   }, [dispatch]);
 
   // Fetch product details for cart items
@@ -211,6 +221,30 @@ const CartPage = () => {
   }, 0);
 
   const isLoading = loading || enrichLoading;
+
+  // Show login prompt if user is not logged in
+  if (!isLoggedIn) {
+    return (
+      <div className="pt-28 px-6 max-w-5xl mx-auto pb-10 min-h-screen flex items-center justify-center">
+        <div className="bg-white p-12 rounded-2xl shadow-lg border border-[#eac1bb]/50 text-center max-w-md">
+          <div className="mb-6">
+            <div className="text-6xl mb-4">🔐</div>
+            <h1 className="text-3xl font-semibold text-[#8a4d55] mb-3">Login Required</h1>
+          </div>
+
+          <p className="text-[#8a4d55]/70 text-lg mb-8">
+            Please login to view your cart and manage your items.
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            className="w-full py-3 px-6 bg-gray-200 text-gray-700 rounded-full font-semibold text-lg hover:bg-gray-300 transition"
+          >
+            Continue Shopping
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pt-28 px-6 max-w-5xl mx-auto pb-10">
