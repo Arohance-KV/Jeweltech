@@ -15,7 +15,8 @@ const ProfilePage = () => {
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate("/");
+    // Refresh the entire page to reset all states
+    window.location.href = "/";
   };
 
   const handleRefresh = () => {

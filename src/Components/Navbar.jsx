@@ -30,23 +30,22 @@ const Navbar = () => {
   });
 
   const handleProfileClick = () => {
-    if (userStatus === "active" || userStatus === "approved") {
+    // Always check localStorage first - this is the source of truth for authentication
+    const token = localStorage.getItem("accessToken");
+    
+    if (!token) {
+      // No token - user is not authenticated, show OTP modal
+      setOpenOTP(true);
+    } else if (userStatus === "active" || userStatus === "approved") {
       // User already approved - go directly to profile
       navigate("/profile");
-    } else if (accessToken && userStatus) {
-      // User has token and profile fetch completed - check status
-      if (userStatus === "pending" || userStatus === "pending_details") {
-        navigate("/profile");
-      } else {
-        navigate("/profile");
-      }
-    } else if (accessToken) {
-      // Token exists but profile still loading - fetch it
-      dispatch(fetchProfile());
+    } else if (userStatus === "pending" || userStatus === "pending_details") {
+      // User has token but not approved yet - show profile page
       navigate("/profile");
     } else {
-      // New user - show OTP modal
-      setOpenOTP(true);
+      // Token exists but status unknown - fetch profile
+      dispatch(fetchProfile());
+      navigate("/profile");
     }
   };
 
