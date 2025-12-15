@@ -6,7 +6,9 @@ import { useNavigate } from "react-router-dom";
 const ProfilePage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user, userStatus, loading, error } = useSelector((state) => state.user);
+  const { user, userStatus, loading, error } = useSelector(
+    (state) => state.user
+  );
 
   useEffect(() => {
     // Fetch user profile when component mounts
@@ -76,7 +78,6 @@ const ProfilePage = () => {
 
         {/* Loading Skeleton */}
         <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200 mb-6 animate-pulse">
-          
           {/* Row 1 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
             <div>
@@ -121,7 +122,6 @@ const ProfilePage = () => {
               <div className="h-6 bg-gray-200 rounded w-28"></div>
             </div>
           </div>
-
         </div>
 
         {/* Loading Buttons */}
@@ -150,9 +150,11 @@ const ProfilePage = () => {
         <h1 className="text-3xl font-semibold text-[#8a4d55]">
           Profile Information
         </h1>
-        
+
         {/* Status Badge */}
-        <div className={`px-4 py-2 rounded-full ${statusConfig.badgeBg} ${statusConfig.badgeText} font-semibold text-sm flex items-center gap-2`}>
+        <div
+          className={`px-4 py-2 rounded-full ${statusConfig.badgeBg} ${statusConfig.badgeText} font-semibold text-sm flex items-center gap-2`}
+        >
           <span>{statusConfig.icon}</span>
           <span>{statusConfig.label}</span>
         </div>
@@ -164,9 +166,9 @@ const ProfilePage = () => {
         </div>
       )}
 
-
-      <div className={`bg-white shadow-lg rounded-xl p-6 border ${statusConfig.borderColor} mb-6`}>
-        
+      <div
+        className={`bg-white shadow-lg rounded-xl p-6 border ${statusConfig.borderColor} mb-6`}
+      >
         {/* Row 1 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
           <div>
@@ -192,6 +194,16 @@ const ProfilePage = () => {
           </p>
         </div>
 
+        {/* GST Number (Optional) */}
+        {user.gstNumber && (
+          <div className="mb-4">
+            <p className="text-[#8a4d55]/70 text-sm">GST Number</p>
+            <p className="text-xl text-[#8a4d55] font-semibold">
+              {user.gstNumber}
+            </p>
+          </div>
+        )}
+
         {/* Row 3 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
           <div>
@@ -203,9 +215,7 @@ const ProfilePage = () => {
 
           <div>
             <p className="text-[#8a4d55]/70 text-sm">Email</p>
-            <p className="text-xl text-[#8a4d55] font-semibold">
-              {user.email}
-            </p>
+            <p className="text-xl text-[#8a4d55] font-semibold">{user.email}</p>
           </div>
         </div>
 
@@ -213,19 +223,14 @@ const ProfilePage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <p className="text-[#8a4d55]/70 text-sm">City</p>
-            <p className="text-xl text-[#8a4d55] font-semibold">
-              {user.city}
-            </p>
+            <p className="text-xl text-[#8a4d55] font-semibold">{user.city}</p>
           </div>
 
           <div>
             <p className="text-[#8a4d55]/70 text-sm">State</p>
-            <p className="text-xl text-[#8a4d55] font-semibold">
-              {user.state}
-            </p>
+            <p className="text-xl text-[#8a4d55] font-semibold">{user.state}</p>
           </div>
         </div>
-
       </div>
 
       {/* Action Buttons */}
@@ -248,7 +253,7 @@ const ProfilePage = () => {
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
         >
-         View Products
+          View Products
         </button>
 
         {/* Logout Button */}
@@ -256,7 +261,7 @@ const ProfilePage = () => {
           onClick={handleLogout}
           className="py-3 bg-red-500 text-white rounded-full text-lg font-semibold shadow-md hover:bg-red-600 transition"
         >
-        Logout
+          Logout
         </button>
       </div>
     </div>

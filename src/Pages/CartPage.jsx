@@ -3,6 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchCart, removeFromCart, generateEnquiry, clearCart } from "../Slices/cartSlice";
 import Toast from "../Components/Toast.jsx";
 import { useNavigate } from "react-router-dom";
+import {
+  sendWhatsAppEnquiry,
+  formatEnquiryMessage,
+} from "../utils/sendWhatsAppEnquiry";
+
 
 const CartPage = () => {
   const dispatch = useDispatch();
@@ -126,63 +131,69 @@ const CartPage = () => {
   };
 
   const handleGenerateEnquiry = async () => {
-    if (enrichedItems.length === 0) {
+  if (enrichedItems.length === 0) {
+    setToast({
+      message: "❌ Cart is empty",
+      type: "error",
+    });
+    return;
+  }
+
+  try {
+    const result = await dispatch(generateEnquiry());
+
+    if (result.type === generateEnquiry.fulfilled.type) {
+      // Beautified WhatsApp-friendly message
+      const formattedMessage = formatEnquiryMessage({
+        items: enrichedItems,
+        total,
+      });
+
+      setEnquiryMessageText(formattedMessage);
+      setShowEnquiryPreview(true);
+    } else {
       setToast({
-        message: "❌ Cart is empty. Add items before sending enquiry",
+        message: "❌ Failed to generate enquiry",
         type: "error",
       });
-      return;
     }
+  } catch {
+    setToast({
+      message: "❌ Error generating enquiry",
+      type: "error",
+    });
+  }
+};
 
-    try {
-      const result = await dispatch(generateEnquiry());
 
-      if (result.type === generateEnquiry.fulfilled.type && result.payload?.message) {
-        // Store the message and show preview
-        setEnquiryMessageText(result.payload.message);
-        setShowEnquiryPreview(true);
-      } else {
+const handleSendToWhatsApp = async () => {
+  try {
+    await sendWhatsAppEnquiry({
+      phoneNumber: "919876543210",
+      message: enquiryMessageText,
+      onDesktopFallback: () => {
         setToast({
-          message: "❌ Failed to generate enquiry",
-          type: "error",
+          message:
+            "WhatsApp Desktop detected. Message copied — paste & send 📋",
+          type: "info",
         });
-      }
-    } catch (err) {
-      console.error("Error generating enquiry:", err);
-      setToast({
-        message: "❌ Error sending enquiry",
-        type: "error",
-      });
-    }
-  };
+      },
+    });
 
-  const handleSendToWhatsApp = () => {
-    try {
-      const ownerWhatsAppNumber = "919876543210"; // Replace with actual owner number
+    setShowEnquiryPreview(false);
 
-      // Properly encode the message for WhatsApp URL
-      const encodedMessage = encodeURIComponent(enquiryMessageText);
-      const whatsappURL = `https://wa.me/${ownerWhatsAppNumber}?text=${encodedMessage}`;
+    setToast({
+      message: "WhatsApp opened. Just click Send ✅",
+      type: "success",
+    });
+  } catch {
+    setToast({
+      message: "❌ Could not open WhatsApp",
+      type: "error",
+    });
+  }
+};
 
-      console.log("Opening WhatsApp with message:", enquiryMessageText);
-
-      window.open(whatsappURL, "_blank");
-
-      setTimeout(() => {
-        setShowEnquiryPreview(false);
-        setToast({
-          message: "✨ WhatsApp opened! Send your enquiry.",
-          type: "success",
-        });
-      }, 500);
-    } catch (err) {
-      console.error("Error sending to WhatsApp:", err);
-      setToast({
-        message: "❌ Error opening WhatsApp",
-        type: "error",
-      });
-    }
-  };
 
   const getPrice = (item) => {
     if (typeof item.price === "number") {

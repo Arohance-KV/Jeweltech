@@ -2,9 +2,20 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateProfile } from "../Slices/userSlice";
 
-const UserFormModal = ({ isOpen, onClose, phone, isdCode, accessToken, onSuccess }) => {
+const UserFormModal = ({
+  isOpen,
+  onClose,
+  phone,
+  isdCode,
+  accessToken,
+  onSuccess,
+}) => {
   const dispatch = useDispatch();
-  const { status, error: reduxError, userStatus: updatedStatus } = useSelector((state) => state.user);
+  const {
+    status,
+    error: reduxError,
+    userStatus: updatedStatus,
+  } = useSelector((state) => state.user);
   if (!isOpen) return null;
 
   const handleUserSubmit = async (e) => {
@@ -16,6 +27,7 @@ const UserFormModal = ({ isOpen, onClose, phone, isdCode, accessToken, onSuccess
       firstName: formData.get("firstName"),
       lastName: formData.get("lastName"),
       buisnessName: formData.get("buisnessName"),
+      gstNumber: formData.get("gstNumber"),
       email: formData.get("email"),
       city: formData.get("city"),
       state: formData.get("state"),
@@ -28,18 +40,22 @@ const UserFormModal = ({ isOpen, onClose, phone, isdCode, accessToken, onSuccess
 
     if (result.payload) {
       // Save user data and access token to localStorage
-      localStorage.setItem("user", JSON.stringify({
-        ...profileData,
-        phone: phone,
-      }));
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...profileData,
+          phone: phone,
+        })
+      );
       if (accessToken) {
         localStorage.setItem("accessToken", accessToken);
       }
 
-      if (onSuccess) onSuccess({
-        ...profileData,
-        phone: phone,
-      });
+      if (onSuccess)
+        onSuccess({
+          ...profileData,
+          phone: phone,
+        });
       onClose();
     }
   };
@@ -47,7 +63,6 @@ const UserFormModal = ({ isOpen, onClose, phone, isdCode, accessToken, onSuccess
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
       <div className="bg-white/90 w-full max-w-md rounded-3xl shadow-2xl p-8 relative border border-[#f3d4cd]">
-
         {/* Close Button */}
         {/* <button
           onClick={onClose}
@@ -69,12 +84,12 @@ const UserFormModal = ({ isOpen, onClose, phone, isdCode, accessToken, onSuccess
         {/* Show approval status if user just completed registration */}
         {updatedStatus === "pending_details" && (
           <div className="bg-yellow-100 text-yellow-800 px-4 py-3 rounded-lg mb-6 border border-yellow-300">
-            ⏳ Your profile is pending admin approval. We'll notify you once approved!
+            ⏳ Your profile is pending admin approval. We'll notify you once
+            approved!
           </div>
         )}
 
         <form onSubmit={handleUserSubmit} className="space-y-4">
-
           {/* Name Row */}
           <div className="flex gap-3">
             <input
@@ -106,6 +121,15 @@ const UserFormModal = ({ isOpen, onClose, phone, isdCode, accessToken, onSuccess
             placeholder="Email"
             className="w-full border border-[#eac1bb] rounded-xl px-4 py-3"
             required
+          />
+
+          {/* GST Number */}
+          <input
+            name="gstNumber"
+            placeholder="GST Number (Optional)"
+            pattern="^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$"
+            title="Enter valid GST Number (e.g. 22AAAAA0000A1Z5)"
+            className="w-full border rounded-xl px-4 py-3"
           />
 
           {/* City + State */}
