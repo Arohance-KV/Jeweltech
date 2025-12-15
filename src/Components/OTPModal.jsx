@@ -7,7 +7,7 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
   const { status, error: reduxError } = useSelector((state) => state.user);
 
   const [step, setStep] = useState(1);
-  const [isdCode, setIsdCode] = useState("+91");
+  const [isdCode] = useState("+91");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
@@ -51,6 +51,12 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
     }
   };
 
+  const handleBackspace = (e, index) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      document.getElementById(`otp-${index - 1}`).focus();
+    }
+  };
+
   const handleVerifyOtp = async () => {
     if (otp.join("").length !== 6) {
       setError("Please enter the complete 6-digit OTP.");
@@ -65,7 +71,7 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
     );
 
     if (result.payload) {
-      // ⬇️ CLOSE OTP MODAL + OPEN USER FORM MODAL
+      // ↓ï¸ CLOSE OTP MODAL + OPEN USER FORM MODAL
       onClose();
       
       // Save accessToken to localStorage for persistent login
@@ -82,74 +88,109 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
     }
   };
 
+  const handleResendOtp = () => {
+    setStep(1);
+    setOtp(["", "", "", "", "", ""]);
+    setError("");
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-      <div className="bg-white/90 w-full max-w-md rounded-3xl shadow-2xl p-8 relative border border-[#f3d4cd]">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-3 sm:px-4 py-4 sm:py-8">
+      <div className="bg-white/95 w-full max-w-xs sm:max-w-sm md:max-w-md rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 relative border border-[#f3d4cd] max-h-[90vh] overflow-y-auto">
 
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-6 top-6 text-2xl text-gray-500 hover:text-gray-700"
+          className="absolute right-4 sm:right-6 top-4 sm:top-6 text-xl sm:text-2xl text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          aria-label="Close modal"
         >
           ✕
         </button>
 
-        {/* ------------------------------
+        {/* ==============================
             STEP 1 : PHONE INPUT
-        ------------------------------ */}
+        ============================== */}
         {step === 1 && (
           <>
-            <h2 className="text-3xl font-semibold text-[#8a4d55] mb-6 text-center">
-              Verify Your Number
-            </h2>
+            {/* Header */}
+            <div className="mb-6 sm:mb-8 pt-2">
+              <h2 className="text-2xl sm:text-3xl font-semibold text-[#8a4d55] text-center leading-tight">
+                Verify Your Number
+              </h2>
+              <p className="text-xs sm:text-sm text-[#8a4d55]/60 text-center mt-2">
+                We'll send you an OTP to confirm your identity
+              </p>
+            </div>
 
-            <div className="flex gap-3">
-              <select
-                value={isdCode}
-                onChange={(e) => setIsdCode(e.target.value)}
-                className="w-28 border border-[#eac1bb] rounded-xl px-3 py-3 bg-white text-[#8a4d55]"
-              >
-                <option>+91 🇮🇳</option>
-                <option>+1 🇺🇸</option>
-                <option>+44 🇬🇧</option>
-                <option>+971 🇦🇪</option>
-              </select>
+            {/* ISD Code + Phone Input */}
+            <div className="flex gap-2 sm:gap-3 mb-4">
+              <div className="flex items-center px-3 sm:px-4 py-2.5 sm:py-3 bg-[#f5d3cd]/30 border border-[#eac1bb] rounded-lg sm:rounded-xl text-[#8a4d55] text-xs sm:text-sm font-medium">
+                +91 🇮🇳
+              </div>
 
               <input
-                type="text"
+                type="tel"
                 value={phone}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, "");
                   setPhone(val.slice(0, 10));
                 }}
-                placeholder="Enter 10-digit number"
-                className="flex-1 border border-[#eac1bb] px-4 py-3 rounded-xl"
+                placeholder="10-digit number"
+                className="flex-1 border border-[#eac1bb] px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base bg-white text-[#8a4d55] placeholder-[#8a4d55]/40 focus:ring-2 focus:ring-[#eac1bb] focus:outline-none transition-all"
                 maxLength={10}
+                inputMode="numeric"
               />
             </div>
 
-            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+            {/* Phone Number Display */}
+            {phone && (
+              <div className="text-xs sm:text-sm text-[#8a4d55]/70 mb-4 px-3 py-2 bg-[#f5d3cd]/30 rounded-lg">
+                We'll send OTP to: <strong>+91 {phone}</strong>
+              </div>
+            )}
 
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50/80 border border-red-200 text-red-600 text-xs sm:text-sm rounded-lg px-3 sm:px-4 py-2 sm:py-3 mb-4">
+                {error}
+              </div>
+            )}
+
+            {/* Send OTP Button */}
             <button
               onClick={handleSendOtp}
-              disabled={status === "loading"}
-              className="w-full mt-6 py-3 bg-[#eac1bb] text-[#8a4d55] rounded-full text-lg shadow-md hover:bg-[#d9a9a0] disabled:opacity-50"
+              disabled={status === "loading" || phone.length !== 10}
+              className="w-full py-2.5 sm:py-3 bg-linear-to-r from-[#eac1bb] to-[#e0b3a9] text-[#8a4d55] rounded-full text-sm sm:text-lg font-semibold shadow-md hover:shadow-lg hover:from-[#d9a9a0] hover:to-[#cf9a8f] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 mt-2"
             >
-              {status === "loading" ? "Sending..." : "Send OTP"}
+              {status === "loading" ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="inline-block w-4 h-4 border-2 border-[#8a4d55]/30 border-t-[#8a4d55] rounded-full animate-spin"></span>
+                  Sending...
+                </span>
+              ) : (
+                "Send OTP"
+              )}
             </button>
           </>
         )}
 
-        {/* ------------------------------
+        {/* ==============================
             STEP 2 : OTP INPUT
-        ------------------------------ */}
+        ============================== */}
         {step === 2 && (
           <>
-            <h2 className="text-3xl font-semibold text-[#8a4d55] mb-6 text-center">
-              Enter OTP
-            </h2>
+            {/* Header */}
+            <div className="mb-6 sm:mb-8 pt-2">
+              <h2 className="text-2xl sm:text-3xl font-semibold text-[#8a4d55] text-center leading-tight">
+                Enter OTP
+              </h2>
+              <p className="text-xs sm:text-sm text-[#8a4d55]/60 text-center mt-2">
+                Enter the 6-digit code sent to +91 {phone}
+              </p>
+            </div>
 
-            <div className="flex justify-between mb-4 gap-2">
+            {/* OTP Input Fields */}
+            <div className="flex justify-center gap-1.5 sm:gap-2 mb-5 sm:mb-6">
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -161,20 +202,42 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
                   onChange={(e) =>
                     handleOtpChange(e.target.value.replace(/\D/g, ""), index)
                   }
-                  className="w-12 h-14 text-center text-2xl border border-[#eac1bb] rounded-xl 
-                  focus:ring-2 focus:ring-[#eac1bb] bg-white shadow-sm"
+                  onKeyDown={(e) => handleBackspace(e, index)}
+                  className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-semibold border-2 border-[#eac1bb] rounded-lg sm:rounded-xl 
+                  focus:ring-2 focus:ring-[#eac1bb] focus:border-[#8a4d55] bg-white text-[#8a4d55] shadow-sm transition-all duration-200 focus:outline-none"
                 />
               ))}
             </div>
 
-            {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50/80 border border-red-200 text-red-600 text-xs sm:text-sm rounded-lg px-3 sm:px-4 py-2 sm:py-3 mb-4">
+                {error}
+              </div>
+            )}
 
+            {/* Verify Button */}
             <button
               onClick={handleVerifyOtp}
-              disabled={status === "loading"}
-              className="w-full py-3 bg-[#eac1bb] text-[#8a4d55] rounded-full text-lg shadow-md hover:bg-[#d9a9a0] disabled:opacity-50"
+              disabled={status === "loading" || otp.join("").length !== 6}
+              className="w-full py-2.5 sm:py-3 bg-linear-to-r from-[#eac1bb] to-[#e0b3a9] text-[#8a4d55] rounded-full text-sm sm:text-lg font-semibold shadow-md hover:shadow-lg hover:from-[#d9a9a0] hover:to-[#cf9a8f] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 mb-3"
             >
-              {status === "loading" ? "Verifying..." : "Verify OTP"}
+              {status === "loading" ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="inline-block w-4 h-4 border-2 border-[#8a4d55]/30 border-t-[#8a4d55] rounded-full animate-spin"></span>
+                  Verifying...
+                </span>
+              ) : (
+                "Verify OTP"
+              )}
+            </button>
+
+            {/* Resend OTP Link */}
+            <button
+              onClick={handleResendOtp}
+              className="w-full text-xs sm:text-sm text-[#8a4d55]/70 hover:text-[#8a4d55] font-medium transition-colors duration-200 py-2"
+            >
+              Didn't receive OTP? <span className="underline">Change number</span>
             </button>
           </>
         )}
