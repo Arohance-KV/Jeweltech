@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { requestOTP, verifyOTP } from "../Slices/userSlice";
 
@@ -11,6 +11,28 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
+  const [timer, setTimer] = useState(0);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+
+  /* ----------------------------------
+      TIMER EFFECT FOR RESEND OTP
+  -----------------------------------*/
+useEffect(() => {
+  if (!isTimerActive) return;
+
+  const interval = setInterval(() => {
+    setTimer(prev => {
+      if (prev <= 1) {
+        setIsTimerActive(false);
+        return 0;
+      }
+      return prev - 1;
+    });
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [isTimerActive]);
+
 
   if (!isOpen) return null;
 
@@ -31,6 +53,8 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
 
     if (result.payload) {
       setStep(2);
+      setTimer(60);
+      setIsTimerActive(true);
     } else {
       setError(reduxError || "Failed to send OTP");
     }
@@ -70,12 +94,13 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
       verifyOTP({ isdCode, phoneNumber: phone, otp: otp.join("") })
     );
 
-    if (result.payload) {
-      // ↓ï¸ CLOSE OTP MODAL + OPEN USER FORM MODAL
-      onClose();
-      
-      // Save accessToken to localStorage for persistent login
+    // ✅ CHECK IF VERIFICATION WAS SUCCESSFUL
+    if (result.payload && result.payload.accessToken) {
+      // ✅ ONLY SAVE TOKEN IF IT EXISTS
       localStorage.setItem("accessToken", result.payload.accessToken);
+      
+      // ✅ CLOSE OTP MODAL + OPEN USER FORM MODAL
+      onClose();
       
       onOtpVerified({
         isdCode,
@@ -84,14 +109,34 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
         userStatus: result.payload.status,
       });
     } else {
-      setError(reduxError || "Failed to verify OTP");
+      // ✅ SHOW ERROR MESSAGE FOR WRONG OTP
+      setError(
+        result.payload?.message || 
+        reduxError || 
+        "Invalid OTP. Please try again."
+      );
+      
+      // ✅ CLEAR OTP FIELDS ON WRONG ENTRY
+      setOtp(["", "", "", "", "", ""]);
+      document.getElementById("otp-0")?.focus();
     }
   };
 
-  const handleResendOtp = () => {
-    setStep(1);
-    setOtp(["", "", "", "", "", ""]);
-    setError("");
+  const handleResendOtp = async () => {
+    // Send OTP again
+    const result = await dispatch(
+      requestOTP({ isdCode, phoneNumber: phone })
+    );
+
+    if (result.payload) {
+      setOtp(["", "", "", "", "", ""]);
+      setError("");
+      setTimer(60);
+      setIsTimerActive(true);
+      document.getElementById("otp-0")?.focus();
+    } else {
+      setError(reduxError || "Failed to resend OTP");
+    }
   };
 
   return (
@@ -235,9 +280,14 @@ const OTPModal = ({ isOpen, onClose, onOtpVerified }) => {
             {/* Resend OTP Link */}
             <button
               onClick={handleResendOtp}
-              className="w-full text-xs sm:text-sm text-[#8a4d55]/70 hover:text-[#8a4d55] font-medium transition-colors duration-200 py-2"
+              disabled={isTimerActive}
+              className="w-full text-xs sm:text-sm text-[#8a4d55]/70 hover:text-[#8a4d55] font-medium transition-colors duration-200 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Didn't receive OTP? <span className="underline">Change number</span>
+              {isTimerActive ? (
+                <span>Resend OTP in <strong>{timer}s</strong></span>
+              ) : (
+                <>Didn't receive OTP? <span className="underline">Resend</span></>
+              )}
             </button>
           </>
         )}

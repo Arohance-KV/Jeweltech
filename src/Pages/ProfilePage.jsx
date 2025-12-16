@@ -112,7 +112,7 @@ const LoadingSkeleton = () => (
 const ProfilePage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user, userStatus, loading, error } = useSelector((state) => state.user);
+  const { user, userStatus, loading } = useSelector((state) => state.user);
 
   useEffect(() => {
     dispatch(fetchProfile());
@@ -163,12 +163,7 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-100 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg mb-6 text-sm sm:text-base">
-          Error loading profile: {error}
-        </div>
-      )}
+      
 
       {/* Profile Card */}
       <div className={`bg-white shadow-lg rounded-xl p-4 sm:p-6 border ${statusConfig.borderColor} mb-6`}>
