@@ -10,7 +10,7 @@ import {
 import { FiTrash2, FiMessageCircle, FiLock } from "react-icons/fi";
 
 // Constants
-const API_BASE_URL = "https://jewel-tech.onrender.com";
+const API_BASE_URL = import.meta.env.VITE_BASE_URL;
 const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='112' height='112'%3E%3Crect fill='%23eac1bb' width='112' height='112'/%3E%3Ctext x='50%' y='50%' font-family='Arial' font-size='12' fill='%238a4d55' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
 const WHATSAPP_PHONE = "919503878192";
 

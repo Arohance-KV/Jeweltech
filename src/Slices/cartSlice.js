@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const API_BASE_URL = 'https://jewel-tech.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_BASE_URL;
 
 // Async Thunks
 export const fetchCart = createAsyncThunk(
